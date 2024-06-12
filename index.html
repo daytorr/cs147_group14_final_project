@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Walking Progress</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Walking Progress</h1>
+    <canvas id="myChart" width="400" height="200"></canvas>
+    <div id="latestVar" style="margin-top: 20px; font-size: 18px; font-weight: bold; white-space: pre-wrap;"></div>
+    <script>
+        async function fetchData() {
+            const response = await fetch('/data');
+            const result = await response.json();
+            return result;
+        }
+
+        async function fetchLatestVar() {
+            const response = await fetch('/latest_var');
+            const result = await response.text();
+            return result;
+        }
+
+        function createChart(data) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+
+            // Ensure we only use the last 30 data points
+            const slicedData = data.slice(-30);
+            const labels = slicedData.map(d => new Date(d[0] * 1000).toLocaleTimeString());
+            const values = slicedData.map(d => d[1]);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Steps',
+                        data: values,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Steps'
+                            },
+                            min: 0,
+                            max: 50
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLatestVar(text) {
+            document.getElementById('latestVar').innerHTML = text.replace(/\n/g, '<br>');
+        }
+
+        fetchData().then(data => createChart(data));
+        fetchLatestVar().then(text => updateLatestVar(text));
+
+        setInterval(() => {
+            fetchData().then(data => createChart(data));
+            fetchLatestVar().then(text => updateLatestVar(text));
+        }, 10000);
+    </script>
+</body>
+</html>
